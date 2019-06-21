@@ -4,7 +4,7 @@ Created on Fri Jun 21 09:06:33 2019
 
 @author: Roni Golan
 
-This code includes a function that converts world coordinates (lng, lat)  to ITM coordinates (x, y)
+This code includes a function that analiticaly converts world coordinates (lng, lat)  to ITM coordinates (x, y) and another function that iteratively converts world coordinates to ITM 
 Notes: the accuracy is far from perfect, with about 20 meters error in Haifa, for example. Good enough for my purposes.
        accuracy increases as you get closer to x0,y0 
  
@@ -56,11 +56,11 @@ def GEOtoITM (lng, lat):
     CD=0.000000003
     Sm0=3512424.3388
     
-    Sm=m0*a_grs80*(1-e2_grs80)*(CA*lng*math.pi/180-CB*math.sin(2*lng*math.pi/180)+CC*math.sin(4*lng*math.pi/180)-CD*math.sin(6*lng*math.pi/180))
-    t=math.tan(lng*math.pi/180)
-    niu2=e2_grs80*(math.cos(lng*math.pi/180)**2)/(1-e2_grs80)
-    N=a_grs80/((1-e2_grs80*(math.sin(lng*math.pi/180)**2))**(0.5))
-    J=(lat-lambda0)*math.pi/180*math.cos(lng*math.pi/180)
+    Sm=m0*a_grs80*(1-e2_grs80)*(CA*lat*math.pi/180-CB*math.sin(2*lat*math.pi/180)+CC*math.sin(4*lat*math.pi/180)-CD*math.sin(6*lat*math.pi/180))
+    t=math.tan(lat*math.pi/180)
+    niu2=e2_grs80*(math.cos(lat*math.pi/180)**2)/(1-e2_grs80)
+    N=a_grs80/((1-e2_grs80*(math.sin(lat*math.pi/180)**2))**(0.5))
+    J=(lng-lambda0)*math.pi/180*math.cos(lat*math.pi/180)
     D2=(J**2)*(1-(t**2)+niu2)/6
     D3=(J**4)*(5-18*(t**2)+14*niu2+(t**4)-58*(t**2)*niu2)/120
     C2=(J**2)*(5-(t**2)+9*niu2+4*(niu2**2))/12
@@ -70,7 +70,37 @@ def GEOtoITM (lng, lat):
     y=y0+(Sm-Sm0)+m0*N*(J**2)*t*(1+C2+C3)/2
     ret=[x,y]
     return (ret)
+"""
+הרעיןו כאן הוא למצוא איטרטיבית את הנקודות העולמיות  
+"""
+def ITMtoGEO(x,y,thresh=10):
+    """
+    #iteratively, to avoid complex calculations 
+    lat_a=33.3 #סוריה
+    lng_a=36.0
 
-a=GEOtoITM(lng=32.783111, lat=35.014547)
-print(a)
+    lat_b=33.3 # ים תיכון צפון
+    lng_b=34.0
 
+    lat_c=29.5 #סיני
+    lng_c=34.0
+
+    lat_d=29.5 #ים סוף
+    lng_d=35.0
+    """
+    lat_i=32.0
+    lng_i=35.0
+    
+    dist=3*thresh    
+    while dist>thresh:
+        a=GEOtoITM(lat=lat_i, lng=lng_i)
+        
+        dist_x=a[0]-x
+        dist_y=a[1]-y
+        dist=((dist_x**2)+(dist_y**2))**(0.5)
+        lng_i=lng_i-(dist_x/1000000)
+        lat_i=lat_i-(dist_y/1000000)
+        print("DX: ", dist_x)
+    ret=[lng_i,lat_i]
+    return (ret)        
+      
